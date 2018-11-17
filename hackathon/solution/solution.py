@@ -1,43 +1,91 @@
 """This module is main module for contestant's solution."""
 
+
 from hackathon.utils.control import Control
 from hackathon.utils.utils import ResultsMessage, DataMessage, PVMode, \
     TYPHOON_DIR, config_outs
 from hackathon.framework.http_server import prepare_dot_dir
 
+global blackout_happened
+blackout_happened = 0
+chargeRate = -1
+dischargeRate = 2
+global minBatteryLife
+minBatteryLife = 0.16
+
+def calcPerc(load1, load2, load3):
+    perc = 0.0
+    if load1:
+        perc += 0.2
+    if load2:
+        perc += 0.4
+    if load3:
+        perc += 0.4
+    return perc
+
+
 
 def worker(msg: DataMessage) -> ResultsMessage:
     """TODO: This function should be implemented by contestants."""
     # Details about DataMessage and ResultsMessage objects can be found in /utils/utils.py
-
     load_one = True
     load_two = True
     load_three = True
     power_reference = 0.0
     pv_mode = PVMode.ON
+    global blackout_happened
+    global minBatteryLife
 
-    # if msg.grid_status:
-    #     if msg.bessSOC != 1 and msg.buying_price == msg.selling_price \
-    #             and msg.current_load <8:
-    #         if msg.bessSOC > 0.45:
-    #             power_reference = -5.0
-    #     elif msg.current_load > 8:
-    #         power_reference = msg.current_load
-    #
-    # else:
-    #     if msg.bessSOC == 1 and msg.solar_production > 0:
-    #         if msg.solar_production < msg.current_load:
-    #             power_reference = msg.current_load
-    #             load_three = False
-    #             pv_mode = PVMode.OFF
-    #         else:
-    #             power_reference = msg.current_load
-    #     elif msg.bessSOC != 1:
-    #         load_three = False
-    #         pv_mode = PVMode.ON
-    #
-    #     elif msg.selling_price == msg.buying_price and msg.solar_production == 0:
-    #         power_reference = msg.current_load
+    if blackout_happened:
+        minBatteryLife = 0.0
+
+    if blackout_happened == 1 and msg.id % 1440 == 0:
+        blackout_happened = 0
+
+    if msg.grid_status == 0 and blackout_happened == 0:
+        blackout_happened = 1;
+        print('another blackout')
+
+
+    # kada se vise isplati da placamo penale nego cenu struje
+    if msg.buying_price > 6 and msg.current_load > 5.625:
+        load_three = False
+
+    if msg.buying_price > 6 and msg.current_load > 6.5625:
+        load_two = False
+
+    #todo pametnije odraditi
+    if msg.current_load > 8.5 and msg.grid_status == 0.0:
+        load_two = False
+        load_three = False
+
+    # if msg.grid_status == 0:
+    #     load_three = False
+
+    # if msg.current_load < 2.5 and msg.solar_production > msg.current_load:
+    #     power_reference = msg.current_load - msg.solar_production
+
+    #ukoliko je skupa struja, a mala potrosnja koristimo bateriju da bi ustedeli
+    #ukoliko imamo viska sunca punimo bateriju
+    if msg.buying_price > 5 and load_two and load_one and msg.bessSOC > minBatteryLife:
+        power_reference = msg.current_load*calcPerc(load_one,load_two,load_three) - msg.solar_production
+        if power_reference > 5.0:
+            power_reference = 5.0
+
+    #ukoliko imamo viska solarne energije a jako je prazna baterija punimo bateriju
+    if msg.solar_production > msg.current_load*calcPerc(load_one,load_two,load_three) and msg.bessSOC < minBatteryLife:
+        power_reference = msg.current_load*calcPerc(load_one,load_two,load_three) - msg.solar_production
+
+    # ukoliko je jeftina struja punimo bateriju do kraja
+    if msg.buying_price < 6 and msg.bessSOC < 1:
+        power_reference = -5.0
+
+    # ukoliko solarni panel proizvodi previse energije, cak i za sve loadove i maks punjenje baterije - gasimo panel
+    if msg.solar_production > 5 + msg.current_load:
+        pv_mode = pv_mode.OFF
+
+    if (60*24*5 - msg.id) * 5 <= msg.bessSOC*20*60:
+        power_reference = 5.0
 
     # Dummy result is returned in every cycle here
     return ResultsMessage(data_msg=msg,

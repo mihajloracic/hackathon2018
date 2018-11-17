@@ -16,7 +16,8 @@ __author__ = "Novak Boskov"
 __copyright__ = "Typhoon HIL Inc."
 __license__ = "MIT"
 
-
+global ukupno
+ukupno = time.time()
 def rater(socket: zmq.Socket, poller: zmq.Poller, data_msg: DataMessage) \
     -> None:
     """Calculate time spent by the solution in current cycle and physics
@@ -24,7 +25,7 @@ def rater(socket: zmq.Socket, poller: zmq.Poller, data_msg: DataMessage) \
     in results file.
 
     """
-
+    global ukupno
     start = time.time()
     # poller.poll blocks until message is sent or for passed
     # milliseconds if message is not sent
@@ -41,10 +42,10 @@ def rater(socket: zmq.Socket, poller: zmq.Poller, data_msg: DataMessage) \
             spent = CFG.max_results_wait
 
         if CFG.DBG:
-            prom = 10
-            #print('DBG: {} {} received after {}s.'
-             #     .format('ADEQUATE' if match else 'INADEQUATE',
-             #             solution_response, spent))
+
+            if data_msg.id % 100 == 0:
+                print("time elapsed " + str("%0.2f" % (time.time() - ukupno)) + "s " +str("%0.2f" % (data_msg.id / 7200 * 100)) + "%")
+                print()
 
         write_a_result(
             *get_physics_metrics(data_msg, solution_response, spent, match),
