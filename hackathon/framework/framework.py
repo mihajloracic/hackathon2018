@@ -24,6 +24,7 @@ def rater(socket: zmq.Socket, poller: zmq.Poller, data_msg: DataMessage) \
     in results file.
 
     """
+
     start = time.time()
     # poller.poll blocks until message is sent or for passed
     # milliseconds if message is not sent
@@ -40,16 +41,18 @@ def rater(socket: zmq.Socket, poller: zmq.Poller, data_msg: DataMessage) \
             spent = CFG.max_results_wait
 
         if CFG.DBG:
-            print('DBG: {} {} received after {}s.'
-                  .format('ADEQUATE' if match else 'INADEQUATE',
-                          solution_response, spent))
+            prom = 10
+            #print('DBG: {} {} received after {}s.'
+             #     .format('ADEQUATE' if match else 'INADEQUATE',
+             #             solution_response, spent))
 
         write_a_result(
             *get_physics_metrics(data_msg, solution_response, spent, match),
             data_msg)
     elif CFG.DBG:
-        print('DBG: results are not sent in predefined interval of {}s.'
-              .format(CFG.max_results_wait))
+        promenjliva = 10
+        #print('DBG: results are not sent in predefined interval of {}s.'
+        #      .format(CFG.max_results_wait))
 
 
 def run(args) -> None:
@@ -109,7 +112,8 @@ def run(args) -> None:
                            soc_bess, overload, mg, current_power)
 
         if CFG.DBG:
-            print('Framework emits {}'.format(data))
+            broj = 'asd'
+            #print('Framework emits {}'.format(data))
 
         data_emit_socket.send_pyobj(data)
         rater(result_gather_socket, results_poll, data)

@@ -15,7 +15,7 @@ __license__ = "MIT"
 
 if __name__ == '__main__':
     prepare_dot_dir()
-    solution = Process(target=solution.run, args=('log', ))
+    solution = Process(target=solution.run, args=())
     solution.start()
-    framework = Process(target=framework.run, args=('log', ))
+    framework = Process(target=framework.run, args=())
     framework.start()

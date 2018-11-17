@@ -5,5 +5,3 @@ viz/.tern-port
 /graphs.py
 .idea/
 /data/profiles.json
-data/results.json
-data/results.out
