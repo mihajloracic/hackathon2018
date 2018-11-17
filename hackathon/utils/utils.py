@@ -242,13 +242,15 @@ class Config:
 # Unique configuration object that should be used everywhere
 CFG = Config()
 
-
+global ukupnoCena
+ukupnoCena = 0
 def write_a_result(energy_mark: float, performance_mark: float,
                    mg: float, penal: float, r_load: float, pv_power: float,
                    soc_bess: float, overload: bool, current_power: float,
                    data_msg: DataMessage) \
                    -> None:
     """Writes a single result record in results dump."""
+    global  ukupnoCena
     with open(CFG.results_dump, 'rb') as f:
         if os.path.getsize(CFG.results_dump) == 0:
             current = []
@@ -261,6 +263,8 @@ def write_a_result(energy_mark: float, performance_mark: float,
         last_energy = current[-1]['overall_energy'] if current else 0
         last_penalty = current[-1]['overall_penalty'] if current else 0
         last_performance = current[-1]['overall_performance'] if current else 0
+        #print("cena " + str(current_mark))
+        ukupnoCena += current_mark
         new = {'overall': last + current_mark,
                'overall_energy': last_energy + energy_mark,
                'overall_penalty': last_penalty + penal,
